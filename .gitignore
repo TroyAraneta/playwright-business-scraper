@@ -1,0 +1,49 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+*.egg
+*.whl
+
+# --- Virtual environment ---
+.venv/
+venv/
+env/
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- Build artifacts ---
+*.spec
+src/dist/
+src/build/
+
+# --- Logs and output data ---
+logs/*.csv
+logs/build/
+logs/dist/
+logs/src_pycache/
+logs/work/
+logs/outputs/
+
+# --- Packaged executables ---
+*.exe
+
+# --- Credentials and secrets ---
+*.json
+!src/google_apps_script.gs
+!src/maps_batch_gui.spec
+*.env
+.env.*
