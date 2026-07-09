@@ -1,132 +1,149 @@
-# Lead Generation Toolkit
+<p align="center">
+  <img src="screenshots/column-config.png" alt="Lead Generation Scraper" width="700">
+</p>
 
-A Python application for extracting business contact data from company websites and collecting leads from Google Maps. Uses heuristic-based HTML parsing — no AI APIs required.
+<h1 align="center">Lead Generation Scraper</h1>
 
-The toolkit has two complementary workflows:
+<p align="center">
+  <b>Extract business contact data from company websites</b><br>
+  Heuristic-based HTML parsing — no AI APIs required.
+</p>
 
-1. **Single-URL Scraper** — Enter any business website and extract company name, email, phone, location, services, and social media profiles.
-2. **Google Maps Batch Collector** — Search Google Maps for businesses by type and location, scrape each website found, and export qualified leads to Google Sheets.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License: MIT">
+  <img src="https://img.shields.io/badge/Tests-13%20passing-brightgreen" alt="Tests passing">
+</p>
 
-Both workflows include a graphical interface, editable results, configurable column mapping, and Google Sheets integration.
+---
+
+## Overview
+
+A Python toolkit with two complementary workflows for collecting business leads:
+
+1. **Single-URL scraper** — Enter any business website and extract company name, email, phone, location, services, and social media profiles.
+2. **Google Maps batch collector** — Search Google Maps for businesses by type and location, scrape each website found, and export qualified leads to Google Sheets.
+
+Both workflows include a graphical interface (Tkinter), editable results, configurable column mapping, and Google Sheets integration. A CLI is also available for automation and scripting.
 
 ---
 
 ## Features
 
-- **Website scraping** — Extracts company name, email(s), phone number(s), address/location, services offered, and social media links (LinkedIn, Facebook, Instagram, Twitter/X, YouTube, TikTok) from a company website.
-- **Contact page discovery** — Automatically finds and follows contact/enquiry/support pages for richer data.
-- **Multi-source email fallback** — If no email is found on the website, attempts extraction from the Facebook About page and LinkedIn company page.
-- **Service categorization** — Recognizes over 15 service categories (SEO, PPC, Social Media, Branding, etc.) using heuristic pattern matching.
-- **Google Maps lead collection** — Searches Google Maps using Playwright headless browser, collects business listings with ratings and review counts, and scrapes each website found.
-- **Multi-location queue** — Run the same search across multiple cities in a single batch.
-- **Duplicate prevention** — Deduplication across locations within a run and across runs via a processed-leads cache read from Google Sheets.
-- **Required field validation** — Skip leads that are missing required data (e.g., no email found) and optionally log them to a Rejected sheet.
-- **Google Sheets export** — Two integration methods: a lightweight Apps Script webhook (no authentication setup) and a gspread service account path for advanced features (cache loading, rejected tracking, summary).
-- **Configurable column mapping** — Map any scraped field to any column header before exporting.
-- **Editable results** — Modify scraped data in the GUI before sending to Sheets.
-- **Graphical and command-line interfaces** — Use the Tkinter GUI or run directly from a terminal.
-- **Performance options** — Configurable concurrency (website scraping via thread pool) and headless browser mode.
-- **Test suite** — Unit tests for extracting company name, emails, services, social links, phone numbers, and locations.
-
----
-
-## Architecture
-
-```
-src/
-├── app.py                     # Core scraping engine
-├── gui.py                     # Single-URL scraper GUI
-├── maps_website_collector.py  # Google Maps browser automation + batch scraping
-├── maps_batch_gui.py          # Maps batch collector GUI
-├── sheets.py                  # Google Sheets integration (gspread + webhook)
-├── google_apps_script.gs      # Apps Script web app for sheet export
-├── tests.py                   # Unit tests
-├── benchmark_scrape.py        # Parallel scraping benchmark
-├── measure_scrape.py          # Single-threaded scrape timing
-├── requirements.txt           # Core dependencies
-├── requirements-playwright.txt # Playwright dependencies
-├── run.bat                    # CLI launcher
-├── run_gui.bat                # Single-URL GUI launcher
-├── run_maps_batch_gui.bat     # Maps batch GUI launcher
-└── maps_batch_gui.spec        # PyInstaller spec for .exe build
-```
-
-### Core scraping engine (`app.py`)
-
-The scraper uses a custom `HTMLParser` subclass (`HeuristicHTMLParser`) that:
-
-- Strips script, style, noscript, and template elements
-- Tracks navigation/header context to weight link importance
-- Collects meta tags, headings, link text, and raw text parts
-- Extracts email addresses from visible text and `mailto:` links, including obfuscated formats (`[at]`, `(dot)`, ` at `)
-- Identifies social media profile URLs via pattern matching for six platforms
-- Extracts phone numbers from `tel:` links and text patterns
-- Detects addresses through common street/keyword heuristics
-- Categorizes services using keyword-to-category rules (SEO, PPC, Branding, etc.)
-
-**Scraping flow:**
-
-1. Fetch homepage (tries HTTPS first, falls back to HTTP)
-2. Extract company name from meta tags → title → h1 → domain name
-3. Extract emails, phone numbers, location, services, and social links
-4. Find same-site contact links and repeat extraction on up to 3 contact pages
-5. If no email found, attempt Facebook About page, then LinkedIn company page
-6. Return all results in a structured dictionary
-
-### Google Maps collector (`maps_website_collector.py`)
-
-Uses Playwright (Chromium) to:
-
-1. Navigate to `google.com/maps/search/{query}+{location}`
-2. Scroll the results feed to load enough business listings
-3. Visit each business detail page and extract name, rating, review count, and website URL
-4. Run each collected website through the scraping engine
-5. Support parallel website scraping via `ThreadPoolExecutor` (configurable worker count)
-6. Save results to CSV or pass to the GUI for sheet export
-
----
-
-## Dependencies
-
-| Package | Required For |
+| Feature | Description |
 |---|---|
-| `beautifulsoup4` | Email extraction from Facebook/Linkedin fallback |
-| `requests` | HTTP requests for Facebook/LinkedIn fallback |
-| `gspread` | Google Sheets read/write (cache, rejected, summary) |
-| `google-auth` | Service account authentication |
-| `playwright` | Google Maps browser automation |
+| **Website scraping** | Extracts company name, email(s), phone(s), address, services, and social media links (LinkedIn, Facebook, Instagram, Twitter/X, YouTube, TikTok). |
+| **Contact page discovery** | Automatically finds and follows contact/enquiry/support pages for richer data. |
+| **Email obfuscation handling** | Decodes `[at]`, `(dot)`, and ` at ` patterns used to hide emails from scrapers. |
+| **Multi-source email fallback** | If no email is found on the website, attempts extraction from the Facebook About page and LinkedIn company page. |
+| **Service categorization** | Recognizes 15+ service categories (SEO, PPC, Social Media, Branding, etc.) using heuristic keyword matching. |
+| **Google Maps lead collection** | Uses Playwright (Chromium) to search Google Maps, collect business listings with ratings and review counts, then scrape each website. |
+| **Multi-location queue** | Run the same search across multiple cities in a single batch. |
+| **Duplicate prevention** | Deduplication across locations within a run and across runs via a processed-leads cache read from Google Sheets. |
+| **Required field validation** | Skip leads missing required data (e.g., no email) and log them to a Rejected sheet. |
+| **Google Sheets export** | Two methods: a lightweight Apps Script webhook (no auth setup) or a gspread service account (cache loading, rejected tracking, summary reports). |
+| **Configurable column mapping** | Map any scraped field to any column header, mark fields as required, reorder columns. |
+| **Editable results** | Modify scraped data in the GUI before exporting. |
+| **Graphical and CLI interfaces** | Tkinter GUI or terminal-based operation. |
+| **Performance tuning** | Configurable concurrency (thread pool) and headless browser mode. |
+| **Windows sleep prevention** | Keeps the system awake during long batch runs. |
 
-### Required Python version
+---
 
-Python 3.10 or newer.
+## Technologies
+
+| Technology | Purpose |
+|---|---|
+| **Python 3.10+** | Core language |
+| **Custom HTMLParser** (stdlib) | Heuristic website scraping engine |
+| **Playwright** | Headless Chromium browser for Google Maps automation |
+| **BeautifulSoup 4 + requests** | Email fallback extraction (Facebook, LinkedIn) |
+| **gspread + google-auth** | Google Sheets service account integration |
+| **Google Apps Script** | Lightweight Sheets webhook |
+| **Tkinter** | Graphical user interfaces |
+| **ThreadPoolExecutor** | Concurrent website scraping |
+| **PyInstaller** | Standalone Windows .exe packaging |
+
+---
+
+## How It Works
+
+### Website Scraping Flow
+
+1. Fetch the homepage (tries HTTPS first, falls back to HTTP).
+2. Extract company name from meta tags → title → h1 → domain name.
+3. Extract emails, phone numbers, location, services, and social links.
+4. Find same-site contact links and repeat extraction on up to 3 contact pages.
+5. If no email found, attempt the Facebook About page, then the LinkedIn company page.
+6. Return all results as a structured dictionary.
+
+The scraping engine uses a custom `HeuristicHTMLParser` subclass that:
+- Strips script, style, and template elements
+- Tracks navigation/header context to weight link importance
+- Collects meta tags, headings, link text, and raw content
+- Handles obfuscated email formats
+
+### Google Maps Collection Flow
+
+1. Navigate to `google.com/maps/search/{query}+{location}` in headless Chromium.
+2. Scroll the results feed to load enough business listings.
+3. Visit each business detail page to extract name, rating, review count, and website URL.
+4. Run each collected website through the scraping engine.
+5. Support parallel scraping via `ThreadPoolExecutor` (configurable worker count).
+6. Save results to CSV or pass to the GUI for Google Sheets export.
+
+---
+
+## Project Structure
+
+```
+Lead Generation Scraper/
+├── src/
+│   ├── app.py                      # Core scraping engine (HTMLParser, extraction logic)
+│   ├── gui.py                      # Single-URL scraper GUI (Tkinter)
+│   ├── maps_website_collector.py   # Google Maps browser automation + batch scraping
+│   ├── maps_batch_gui.py           # Maps batch collector GUI (Tkinter)
+│   ├── sheets.py                   # Google Sheets integration (gspread + webhook)
+│   ├── google_apps_script.gs       # Apps Script web app for sheet export
+│   ├── tests.py                    # Unit tests for core extractors
+│   ├── benchmark_scrape.py         # Parallel scraping benchmark tool
+│   ├── measure_scrape.py           # Single-threaded scraping timer
+│   ├── requirements.txt            # Core dependencies
+│   ├── requirements-playwright.txt # Playwright-only dependencies
+│   ├── run.bat                     # CLI launcher (Windows)
+│   ├── run_gui.bat                 # Single-URL GUI launcher (Windows)
+│   ├── run_maps_batch_gui.bat      # Maps batch GUI launcher (Windows)
+│   └── maps_batch_gui.spec         # PyInstaller spec for .exe build
+├── screenshots/                    # Application screenshots
+├── logs/                           # Settings persistence + output CSVs
+├── .gitignore
+├── LICENSE
+└── README.md
+```
 
 ---
 
 ## Installation
 
-### 1. Clone the repository
+### Prerequisites
+
+- Python 3.10 or newer
+
+### Setup
 
 ```powershell
+# Clone the repository
 git clone <repo-url>
 cd Lead Generation Scraper
-```
 
-### 2. Set up a virtual environment
-
-```powershell
+# Create and activate a virtual environment
 python -m venv .venv
 .\.venv\Scripts\activate
-```
 
-### 3. Install dependencies
-
-```powershell
+# Install core dependencies
 pip install -r src\requirements.txt
-```
 
-If you plan to use the Google Maps batch collector:
-
-```powershell
+# If using the Google Maps batch collector:
 pip install -r src\requirements-playwright.txt
 python -m playwright install
 ```
@@ -141,15 +158,7 @@ python -m playwright install
 .\src\run_gui.bat
 ```
 
-Or directly:
-
-```powershell
-python src\gui.py
-```
-
-Paste a company website URL, click **Scrape Website**, and the app populates editable fields for company name, email, phone, location, services, and social links. You can edit any field before exporting.
-
-The **Google Sheets Column Configuration** panel lets you define which columns to export and how they map to scraped fields. Add, remove, and reorder columns, then click **Send to Sheet**.
+Paste a company website URL, click **Scrape Website**, and the app populates editable fields for company name, email, phone, location, services, and social links. Modify any field before exporting to Google Sheets via the **Send to Sheet** button. The **Column Configuration** panel lets you define which columns to export and how they map to scraped fields.
 
 ### GUI — Google Maps Batch Collector
 
@@ -157,18 +166,10 @@ The **Google Sheets Column Configuration** panel lets you define which columns t
 .\src\run_maps_batch_gui.bat
 ```
 
-Or directly:
-
-```powershell
-python src\maps_batch_gui.py
-```
-
 1. Enter a business service (e.g., "marketing agency") and configure max results.
-2. Add one or more locations to the queue (e.g., "Austin, Texas", "Dallas, Texas").
+2. Add one or more locations to the queue (e.g., "Austin, Texas").
 3. Configure column mappings and set required fields.
-4. Click **Start Batch**.
-5. The app searches Google Maps, collects business listings, scrapes each website, and sends qualified leads to Google Sheets.
-6. Leads missing required fields are automatically logged to a **Rejected** sheet (if service account credentials are configured).
+4. Click **Start Batch** to begin collection, scraping, and export.
 
 ### CLI — Single URL
 
@@ -208,21 +209,16 @@ Output is JSON:
 python src\maps_website_collector.py "marketing agency" "Austin Texas" --max-results 30
 ```
 
-Add `--skip-scrape` to collect website URLs only (no per-website scraping):
+Options:
 
-```powershell
-python src\maps_website_collector.py "plumber" "Chicago" --max-results 20 --skip-scrape
-```
+| Flag | Description |
+|---|---|
+| `--skip-scrape` | Collect website URLs only (no per-website scraping) |
+| `--headless` | Run the browser in the background |
+| `--workers N` | Set concurrent scraper threads (default: 10) |
+| `--output FILE` | Output CSV path (default: `maps_leads.csv`) |
 
-Add `--headless` to run the browser in the background:
-
-```powershell
-python src\maps_website_collector.py "dentist" "Miami" --max-results 50 --headless
-```
-
-Output is saved to a CSV file (default: `maps_leads.csv`). Use `--workers` to control concurrency (default: 10).
-
-### Running tests
+### Running Tests
 
 ```powershell
 python src\tests.py
@@ -230,147 +226,58 @@ python src\tests.py
 
 ---
 
+## Screenshots
+
+| Single-URL Scraper GUI | Maps Batch Collector | Column Configuration |
+|---|---|---|
+| ![Single-URL Scraper](screenshots/single-url-gui.png) | ![Maps Batch Collector](screenshots/maps-batch-gui.png) | ![Column Config](screenshots/column-config.png) |
+
+| Accepted Sheet | Rejected Sheet |
+|---|---|
+| ![Accepted Sheet](screenshots/accepted-sheet.png) | ![Rejected Sheet](screenshots/rejected-sheet.png) |
+
+---
+
 ## Google Sheets Integration
 
-The application supports two Google Sheets integration methods:
+Two methods are supported:
 
 ### Method 1: Apps Script Webhook (simpler)
 
-Use this for basic export — sending a single row per scrape to a sheet.
+1. Open your Google Sheet, go to **Extensions → Apps Script**.
+2. Paste the contents of `src/google_apps_script.gs`.
+3. Deploy as a **Web app** (execute as `Me`, access `Anyone`).
+4. Copy the Web App URL into the application's webhook field.
 
-1. Open your Google Sheet.
-2. Go to **Extensions → Apps Script**.
-3. Paste the contents of `src/google_apps_script.gs`.
-4. Click **Deploy → New deployment**.
-5. Choose type **Web app**.
-6. Set **Execute as** to `Me`.
-7. Set **Who has access** to `Anyone`.
-8. Deploy, authorize, and copy the **Web App URL**.
-9. Paste that URL into the **Google Sheet Webhook URL** field in the app.
-
-The Apps Script creates an **Accepted** sheet (or uses the active sheet) and appends rows with whatever column headers you have configured. It automatically expands columns when new headers are sent.
+The Apps Script creates an **Accepted** sheet (or uses the active sheet) and appends rows with whatever column headers you configure.
 
 ### Method 2: Service Account (advanced)
 
-Use this for duplicate prevention, rejected-lead tracking, and summary reports.
+1. Create a Google Cloud service account and enable the Sheets API.
+2. Download the JSON key and share your spreadsheet with the service account email.
+3. Set the **Service Account JSON** path and **Spreadsheet ID** in the Maps Batch GUI.
 
-1. Create a Google Cloud service account and enable the Google Sheets API.
-2. Download the JSON key file.
-3. Share your target spreadsheet with the service account email (as an editor).
-4. In the Maps Batch GUI, set the **Service Account JSON** path and **Spreadsheet ID** fields.
-
-When configured, the app:
-
-- Loads already-processed leads from the **Accepted** and **Rejected** sheets into a cache at startup.
-- Skips businesses already present in either sheet during collection.
-- Appends leads that fail required-field validation to a **Rejected** sheet with the reason.
-- Optionally writes a **Summary** tab with aggregate statistics (companies found, qualified leads, emails found, duplicates removed, elapsed time).
+This enables duplicate prevention (caches processed leads), rejected-lead tracking, and optional summary reports.
 
 ---
 
-## Configuration
+## Future Improvements
 
-### Settings persistence
-
-Settings are saved automatically to JSON files in the `logs/` directory:
-
-| File | Purpose |
-|---|---|
-| `logs/scraper_settings.json` | Webhook URL and column mapping for the single-URL GUI |
-| `logs/maps_batch_settings.json` | Full batch configuration (query, location queue, max results, webhook, credentials, columns) |
-
-### Column mapping
-
-Both GUIs include a column configuration panel where you can:
-
-- Add columns with custom headers (e.g., "Company Email" → `email`)
-- Map each column to any scraped field (20 available fields)
-- Mark columns as **Required** — leads missing required fields are skipped or rejected
-- Reorder columns to match your spreadsheet layout
-- Remove or update existing columns
-
-### Available scraped fields
-
-| Field Code | Description |
-|---|---|
-| `maps_business_name` | Google Maps business listing name |
-| `company_name` | Company name extracted from website |
-| `source_url` | The website URL |
-| `email` | Company email(s) |
-| `phone` | Phone number(s) |
-| `location` | Address / location |
-| `services` | Services offered (categorized) |
-| `rating` | Google Maps star rating |
-| `review_count` | Google Maps review count |
-| `linkedin` | LinkedIn profile URL |
-| `facebook` | Facebook page URL |
-| `instagram` | Instagram profile URL |
-| `twitter` | Twitter/X profile URL |
-| `youtube` | YouTube channel URL |
-| `tiktok` | TikTok profile URL |
-| `all_socials` | All social URLs combined |
-| `maps_url` | Google Maps place URL |
-| `timestamp` | When the scrape was performed |
-| `error` | Error message (if scraping failed) |
+- Bulk URL import (upload a CSV of URLs to scrape)
+- Progress indicator for the single-URL scraper
+- Environment variable configuration documentation
+- Type hints across all modules
+- `pyproject.toml` for `pip install -e .` support
+- GitHub Actions CI pipeline
 
 ---
 
-## Packaging (PyInstaller)
+## License
 
-The Maps Batch GUI can be packaged as a standalone Windows executable:
-
-```powershell
-pip install pyinstaller
-pyinstaller src\maps_batch_gui.spec
-```
-
-The spec file is preconfigured with hidden imports for BeautifulSoup, requests, gspread, and Google Auth libraries. The output executable is placed in `src/dist/maps_batch_gui.exe`.
-
-When running as a packaged .exe, Playwright's browser detection may need the `PLAYWRIGHT_BROWSERS_PATH` environment variable pointing to where `playwright install` downloaded Chromium (default: `%USERPROFILE%\AppData\Local\ms-playwright`).
+[MIT](LICENSE)
 
 ---
 
-## Project Status
-
-The application is functional and in active use. Key design decisions:
-
-- **No AI dependency** — all extraction uses regex, HTML structure analysis, and keyword matching.
-- **Heuristic-based service categorization** — services are identified by keywords in navigation labels, section headings, and content, then mapped to standard categories.
-- **Privacy-conscious** — the Google Maps collector uses a real browser with polite delays and rate limiting. No API keys are required for Maps data.
-- **Graceful degradation** — missing contact pages, blocked requests, and login walls are handled without crashing. Missing fields return empty strings rather than raising errors.
-
-<!--
-
-## Portfolio Notes
-
-### Features that appear incomplete
-
-- The "Keep Screen Awake" and "Include Summary" checkboxes in `maps_batch_gui.py` are functional but lack UI polish (no tooltips, no disabled states when credentials are missing).
-- The benchmark (`benchmark_scrape.py`) and timing (`measure_scrape.py`) scripts reference hardcoded CSV file paths from `logs/` — they are developer tools, not polished features, and would benefit from command-line arguments.
-- The `maps_batch_gui.py` has TEMP_PAYLOAD and TEMP_WEBHOOK debug logging statements still present (lines 986-1009). These should be removed or gated behind a verbose flag.
-- No progress indicator exists for the single-URL GUI's scraping operation beyond a status text label.
-- There is no bulk import feature (e.g., upload a CSV of URLs to scrape).
-- The Facebook/LinkedIn email fallback is a best-effort feature and may fail on login-walled pages — this is documented in the code but worth noting.
-
-### Missing documentation
-
-- No CONTRIBUTING.md or code of conduct.
-- No LICENSE file is present in the repository.
-- No CI/CD configuration (GitHub Actions, etc.).
-- No `setup.py` or `pyproject.toml` for pip-installable packaging.
-- Environment variable configuration is not documented (e.g., `PLAYWRIGHT_BROWSERS_PATH` is mentioned only in source code comments).
-
-### Opportunities to improve the repository for job applications
-
-1. **Add a LICENSE file** (MIT is standard for portfolio projects).
-2. **Add a `pyproject.toml`** so the package can be installed with `pip install -e .`.
-3. **Remove TEMP_PAYLOAD and TEMP_WEBHOOK debug log lines** from `maps_batch_gui.py` — these look like unfinished instrumentation.
-4. **Add a `.gitignore`** for `logs/` (settings files contain credentials/API keys), `__pycache__/`, `.venv/`, and build artifacts.
-5. **Replace hardcoded paths** in benchmark scripts with command-line arguments.
-6. **Consider adding type hints** throughout — only `app.py` and `maps_batch_gui.py` have full type annotations.
-7. **Refactor the two GUIs** — there is significant duplicated code between `gui.py` and `maps_batch_gui.py` (column mapping UI, settings persistence, sheet export logic) that could share a base class or utility module.
-8. **Add a `--version` flag** and version constant.
-9. **Add a demo GIF or screenshot** to the README — visual proof of the GUIs in action is compelling for employers.
-10. **Remove the TASK.md file** if it contains internal notes not relevant to readers.
-
--->
+<p align="center">
+  Built with Python • Playwright • Tkinter
+</p>
