@@ -713,8 +713,6 @@ class MapsBatchLeadApp(tk.Tk):
             _prevent_sleep()
         try:
             start_time = time.time()
-            _test_run_id = f"ztest_{datetime.now():%Y%m%d_%H%M%S}"
-            self.worker_queue.put(("log", f"[TEST_RUN] marker={_test_run_id}"))
             total_location_count = len(locations)
             all_qualified = 0
             all_total_raw = 0
